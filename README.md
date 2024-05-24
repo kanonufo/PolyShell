@@ -68,16 +68,47 @@ class Program
 }
    
 
-## Fiber Shellcode:
+# Técnica Fiber Shellcode
 
-Fiber Shellcode es una técnica que implica la ejecución de shellcode en un hilo de fibra en lugar de un hilo tradicional. Esto ayuda a evadir la detección, ya que los hilos de fibra son menos monitoreados por los mecanismos de seguridad convencionales. El código a continuación muestra cómo se ejecuta el shellcode en un hilo de fibra:
+Fiber Shellcode es una técnica utilizada en el desarrollo de malware y herramientas de hacking para ejecutar código malicioso en un hilo de fibra en lugar de un hilo tradicional en un proceso de Windows. Esta técnica se utiliza para evadir la detección de seguridad y camuflar la ejecución del shellcode.
+
+## Ejemplo de Código
+
+A continuación se muestra un ejemplo simplificado de cómo se implementa la técnica de Fiber Shellcode en C#:
 
 ```csharp
-// Función para ejecutar shellcode en un hilo de fibra
-static void FiberShellcode()
+using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+class Program
 {
-    // Código para descargar y ejecutar el shellcode...
+    // Función para ejecutar shellcode en un hilo de fibra
+    static void FiberShellcode()
+    {
+        // Código para descargar y ejecutar el shellcode...
+    }
+
+    // Declaraciones de las funciones nativas necesarias
+    [DllImport("kernel32.dll")]
+    public static extern IntPtr CreateFiber(uint dwStackSize, ThreadStart lpStartAddress, IntPtr lpParameter);
+
+    [DllImport("kernel32.dll")]
+    public static extern void ConvertFiberToThread();
+
+    static void Main(string[] args)
+    {
+        // Convertir el hilo actual en un hilo de fibra
+        IntPtr lpFiber = ConvertThreadToFiber(IntPtr.Zero);
+
+        // Crear un nuevo hilo de fibra y ejecutar el shellcode
+        IntPtr fiber = CreateFiber(0, new ThreadStart(FiberShellcode), IntPtr.Zero);
+
+        // Restaurar el contexto original del hilo
+        ConvertFiberToThread();
+    }
 }
+
 
 
 Descargo de Responsabilidad:
